@@ -1,0 +1,19 @@
+graph TD
+    Client[Frontend - React]
+    
+    subgraph Serviço de Vendas
+        Sales[Vendas API - PHP/Laravel]
+        DB_Sales[(DB Vendas - PostgreSQL)]
+    end
+    
+    subgraph Serviço de Catálogo
+        Catalog[Catálogo API - Python]
+        DB_Catalog[(DB Catálogo - PostgreSQL)]
+    end
+
+    Client -->|1. GET /eventos| Catalog
+    Client -->|2. POST /comprar| Sales
+    Sales -->|3. POST /reservar| Catalog
+    
+    Sales --- DB_Sales
+    Catalog --- DB_Catalog

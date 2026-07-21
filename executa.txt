@@ -1,0 +1,9 @@
+Como rodar
+O Docker Desktop estava parado aqui. Com ele ligado:
+
+docker compose up --build
+Frontend: http://localhost:5173
+Swagger Catálogo: http://localhost:8000/docs
+API Vendas: http://localhost:8080/api/vendas
+RabbitMQ: http://localhost:15672 (guest/guest)
+Fluxo na UI: Entrar na fila → aguardar liberação (~5s) → Comprar ingresso.

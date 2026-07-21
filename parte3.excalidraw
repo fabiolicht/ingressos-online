@@ -1,0 +1,21 @@
+sequenceDiagram
+    participant U as React (Frontend)
+    participant V as Vendas (PHP)
+    participant Pag as Gateway Pagamento
+    participant MQ as Fila (RabbitMQ)
+    participant C as Catálogo (Python)
+
+    U->>V: POST /comprar
+    V->>C: POST /reservar (Síncrono)
+    C-->>V: 200 OK (Estoque Deduzido)
+    
+    V->>Pag: Tenta Cobrar Cartão
+    Pag-->>V: Falha (Transação Recusada)
+    
+    Note over V,C: Início do Rollback (Saga)
+    V->>MQ: Publica Evento: Reserva_Cancelada {evento_id, qtd, pedido_id}
+    V-->>U: 402 Payment Required (Erro na compra)
+    
+    MQ-->>C: Worker Python consome a fila
+    Note right of C: Transação de Compensação
+    C->>C: UPDATE estoque SET qtd = qtd + X WHERE evento_id = Y

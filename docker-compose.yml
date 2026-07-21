@@ -1,0 +1,175 @@
+services:
+  db-catalog:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: catalog
+      POSTGRES_USER: catalog
+      POSTGRES_PASSWORD: catalog
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./catalog-service/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U catalog -d catalog"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  db-sales:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: sales
+      POSTGRES_USER: sales
+      POSTGRES_PASSWORD: sales
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./sales-service/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sales -d sales"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  catalog-api:
+    build: ./catalog-service
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://catalog:catalog@db-catalog:5432/catalog
+      REDIS_URL: redis://redis:6379/0
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      INTERNAL_API_KEY: dev-internal-key
+    depends_on:
+      db-catalog:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./catalog-service:/app
+
+  catalog-worker:
+    build: ./catalog-service
+    command: python -m worker.compensacao
+    environment:
+      DATABASE_URL: postgresql://catalog:catalog@db-catalog:5432/catalog
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+    depends_on:
+      db-catalog:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./catalog-service:/app
+
+  posvenda-worker:
+    build: ./catalog-service
+    command: python -m worker.posvenda
+    environment:
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./catalog-service:/app
+
+  sales-api:
+    build: ./sales-service
+    ports:
+      - "8080:80"
+    environment:
+      APP_KEY: base64:dGVzdGtleXRlc3RrZXl0ZXN0a2V5dGVzdGs=
+      APP_ENV: local
+      APP_DEBUG: "true"
+      DB_CONNECTION: pgsql
+      DB_HOST: db-sales
+      DB_PORT: 5432
+      DB_DATABASE: sales
+      DB_USERNAME: sales
+      DB_PASSWORD: sales
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      CACHE_STORE: redis
+      REDIS_CLIENT: phpredis
+      CATALOG_API_URL: http://catalog-api:8000
+      INTERNAL_API_KEY: dev-internal-key
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+      FILA_LIBERACAO_VAGAS: "500"
+      PAGAMENTO_MOCK_FALHA: "false"
+    depends_on:
+      db-sales:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      catalog-api:
+        condition: service_started
+    volumes:
+      - ./sales-service:/var/www/html
+
+  sales-worker:
+    build: ./sales-service
+    command: php artisan fila:liberar --interval=5
+    environment:
+      APP_KEY: base64:dGVzdGtleXRlc3RrZXl0ZXN0a2V5dGVzdGs=
+      APP_ENV: local
+      DB_CONNECTION: pgsql
+      DB_HOST: db-sales
+      DB_PORT: 5432
+      DB_DATABASE: sales
+      DB_USERNAME: sales
+      DB_PASSWORD: sales
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      CACHE_STORE: redis
+      REDIS_CLIENT: phpredis
+      FILA_LIBERACAO_VAGAS: "500"
+    depends_on:
+      redis:
+        condition: service_healthy
+      sales-api:
+        condition: service_started
+    volumes:
+      - ./sales-service:/var/www/html
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_CATALOG_API_URL: http://localhost:8000
+      VITE_SALES_API_URL: http://localhost:8080
+    depends_on:
+      - catalog-api
+      - sales-api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules

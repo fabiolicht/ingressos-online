@@ -1,0 +1,22 @@
+sequenceDiagram
+    participant U as React (Frontend)
+    participant V as Vendas (PHP)
+    participant C as Catálogo (Python)
+    participant BD as DB Catálogo
+
+    U->>V: POST /pedidos (Evento ID, Qtd)
+    V->>C: POST /reservar (Evento ID, Qtd)
+    
+    Note over C,BD: Garantia contra overselling (Atomic Update)
+    C->>BD: UPDATE estoque SET qtd = qtd - X WHERE qtd >= X
+    
+    alt Estoque Disponível
+        BD-->>C: Sucesso (Linha atualizada)
+        C-->>V: 200 OK (Reserva Confirmada)
+        V->>V: Processa Pagamento / Salva Pedido
+        V-->>U: 200 OK (Compra Realizada)
+    else Estoque Insuficiente
+        BD-->>C: Falha (Nenhuma linha afetada)
+        C-->>V: 409 Conflict (Sem estoque)
+        V-->>U: 400 Bad Request (Ingressos Esgotados)
+    end
