@@ -9,7 +9,7 @@ Sistema de venda de ingressos com arquitetura de microsserviços.
 | Frontend | React + Vite | 5173 | Interface do usuário |
 | Catálogo | Python FastAPI | 8000 | Eventos e controle de estoque |
 | Vendas | PHP Laravel 11 | 8080 | Orquestração de compras |
-| DB Catálogo | PostgreSQL 16 | 5432 | Dados de eventos/estoque |
+| DB Catálogo | PostgreSQL 16 | 5434 | Dados de eventos/estoque |
 | DB Vendas | PostgreSQL 16 | 5433 | Dados de pedidos |
 | Redis | Redis 7 | 6379 | Cache, Circuit Breaker, Fila de Espera |
 | RabbitMQ | RabbitMQ 3 | 5672 / 15672 | Compensação e pós-venda (Saga) |

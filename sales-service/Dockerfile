@@ -25,9 +25,12 @@ RUN apk add --no-cache \
     && docker-php-ext-enable redis \
     && apk del $PHPIZE_DEPS
 
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
 WORKDIR /var/www/html
 
 COPY --from=vendor /app/vendor ./vendor
+COPY --from=vendor /app/composer.lock ./composer.lock
 COPY . .
 
 RUN mkdir -p storage/framework/{cache,sessions,views} storage/logs bootstrap/cache \

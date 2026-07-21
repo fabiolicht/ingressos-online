@@ -6,7 +6,7 @@ services:
       POSTGRES_USER: catalog
       POSTGRES_PASSWORD: catalog
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
       - ./catalog-service/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
@@ -47,10 +47,11 @@ services:
       - "5672:5672"
       - "15672:15672"
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
       interval: 10s
-      timeout: 5s
-      retries: 5
+      timeout: 10s
+      retries: 10
+      start_period: 40s
 
   catalog-api:
     build: ./catalog-service
@@ -134,6 +135,7 @@ services:
         condition: service_started
     volumes:
       - ./sales-service:/var/www/html
+      - sales_vendor:/var/www/html/vendor
 
   sales-worker:
     build: ./sales-service
@@ -159,6 +161,7 @@ services:
         condition: service_started
     volumes:
       - ./sales-service:/var/www/html
+      - sales_vendor:/var/www/html/vendor
 
   frontend:
     build: ./frontend
@@ -173,3 +176,6 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
+
+volumes:
+  sales_vendor:
