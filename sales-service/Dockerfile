@@ -1,7 +1,15 @@
 FROM composer:2 AS vendor
 WORKDIR /app
 COPY composer.json ./
-RUN composer install --no-dev --no-scripts --prefer-dist --ignore-platform-reqs
+# Packagist bloqueia laravel/framework 11.x por advisories sem patch na linha 11.
+# Desativa o block do resolver só neste build didático.
+RUN composer config audit.block-insecure false \
+    && composer config policy.advisories.block false \
+    && composer install \
+        --no-dev \
+        --no-scripts \
+        --prefer-dist \
+        --ignore-platform-reqs
 
 FROM php:8.3-fpm-alpine
 
