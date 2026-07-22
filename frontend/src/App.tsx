@@ -30,16 +30,27 @@ export default function App() {
       <div className="atmosphere" aria-hidden="true" />
 
       <header className="hero">
-        <p className="brand">Ingressos Online</p>
-        <h1>Seu próximo show, sem overselling.</h1>
+        
+        <div className="brand">
+          <div className="brand-title">
+            <span className="brand-healthb">HEALTHB</span>
+            <span className="brand-it">iT</span>
+          </div>
+          <div className="brand-subtitle">
+            INTELIGÊNCIA EM SAÚDE
+          </div>
+        </div>
+        <h1>Ingressos Online</h1>
+        <h3>Front React - Back Catálogo (Python) - Vendas (Laravel).</h3>
         <p className="hero-lead">
           Catálogo em tempo real, reserva atômica e fila virtual nos picos.
         </p>
+        
         <a className="btn-hero" href="#eventos">
           Ver eventos
         </a>
       </header>
-
+      
       <main id="eventos" className="section-eventos">
         <div className="section-head">
           <h2>Eventos disponíveis</h2>
@@ -65,7 +76,7 @@ export default function App() {
       </main>
 
       <footer className="footer">
-        <span>React → Catálogo (Python) · Vendas (Laravel)</span>
+        <span>© 2026 Fabio Lopes Licht</span>
       </footer>
     </div>
   );

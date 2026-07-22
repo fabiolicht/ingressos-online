@@ -73,3 +73,4 @@ def reservar_ingresso(db: Session, payload: ReservarRequest) -> ReservarResponse
         evento_id=payload.evento_id,
         quantidade=payload.quantidade,
     )
+ 

@@ -1,5 +1,3 @@
-Como rodar
-O Docker Desktop estava parado aqui. Com ele ligado:
 
 docker compose up --build
 Frontend: http://localhost:5173

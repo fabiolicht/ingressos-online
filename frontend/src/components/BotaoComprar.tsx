@@ -56,4 +56,4 @@ export default function BotaoComprar({ eventoId, filaToken, onSuccess }: BotaoCo
       )}
     </div>
   );
-}
+} 
